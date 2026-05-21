@@ -18,7 +18,34 @@ class liszt{
 			'month' => $this->now->format('m'),
 			'roman' => $this->romanic_number($this->now->format('Y'))
 		];
+
+		$this->cleanGet = $this->sanitizeInput($_GET);
+		$this->cleanPost = $this->sanitizeInput($_POST);
+		$this->cleanCookie = $this->sanitizeInput($_COOKIE);
+		$this->cleanServer = $this->sanitizeInput($_SERVER);
 	}
+
+	private function sanitizeInput(array $source) 
+	{
+		$clean = [];
+		$skipKeys = ['filter', 'criteria', 'where','q']; // keys to skip sanitizing
+
+		foreach ($source as $k => $v) {
+			if (in_array($k, $skipKeys)) {
+				$clean[$k] = $v;
+			} else {
+				$clean[$k] = is_string($v)
+					? filter_var($v, FILTER_SANITIZE_FULL_SPECIAL_CHARS) // or keep as raw
+					: $v;
+			}
+		}
+		return $clean;
+	}
+
+	public function get($key, $default = null, $type = 'string'){return $this->input($this->cleanGet, $key, $default, $type);}
+	public function post($key, $default = null, $type = 'string'){return $this->input($this->cleanPost, $key, $default, $type);}
+	public function server($key, $default = null, $type = 'string'){return $this->input($this->cleanServer, $key, $default, $type);}
+	public function cookie($key, $default = null, $type = 'string'){return $this->input($this->cleanCookie, $key, $default, $type);}
 
 	public function externals(){
 		include "externals.php";
@@ -37,7 +64,7 @@ class liszt{
 			echo "			<meta property=\"og:title\" content=\"".$title."\"/>\n";
     		echo "			<meta property=\"og:description\" content=\"".$title."\"/>\n";
 			echo "			<meta property=\"og:type\" content=\"website\"/>\n";
-    		echo "			<meta property=\"og:url\" content=\"".$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']."\"/>\n";
+    		echo "			<meta property=\"og:url\" content=\"".$this->server("HTTP_HOST").$this->server("REQUEST_URI")."\"/>\n";
     		echo "			<meta property=\"og:image\" content=\"".$img."\"/>\n";
 			// $this->kmail($_SERVER['REQUEST_URI']);
 			//if($_SERVER['HTTP_HOST']=="noteforge.com"||$_SERVER['HTTP_HOST']=="xkylevanderburg.com"){$light=1;}else{$light=0;}
